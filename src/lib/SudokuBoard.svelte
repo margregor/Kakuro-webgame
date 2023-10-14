@@ -15,7 +15,7 @@
         if (event.inputType === "insertText")
         {
             const value = parseInt(event.data);
-            if (!isNaN(value))
+            if (!isNaN(value) && value>0)
             {
                 board[rowIndex][cellIndex] = value;
                 event.currentTarget.value = value;
@@ -51,7 +51,8 @@
         border: none;
         text-align: center;
         font-size: 20px;
-        inputmode: numeric;
+        -webkit-appearance: none;
+        -moz-appearance: textfield;
     }
 </style>
 
@@ -60,8 +61,10 @@
         {#each row as cell, cellIndex}
             <div class="cell">
                 <input
-                        type="text"
+                        type="number"
                         value={cell}
+                        min="0"
+                        max="9"
                         on:input={(event) => handleCellInput(event, rowIndex, cellIndex)}
                 />
             </div>
