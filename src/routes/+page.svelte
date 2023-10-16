@@ -1,9 +1,9 @@
 <script>
-    import SudokuBoard from '$lib/SudokuBoard.svelte';
+    import KakuroBoardView from '$lib/KakuroBoardView.svelte';
 </script>
 
 <main>
-    <SudokuBoard />
+    <KakuroBoardView />
 </main>
 
 <style>
