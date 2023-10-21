@@ -1,8 +1,11 @@
 <script>
     import { KakuroBoard, CellType } from "$lib/KakuroBoard.js";
-    let board = new KakuroBoard();
+    import tippy from "tippy.js";
+    import 'tippy.js/dist/tippy.css';
+    import 'tippy.js/themes/material.css';
+    import {combinations} from "$lib/combinations.js";
 
-    console.log(board.board);
+    let board = new KakuroBoard();
 
     function handleFieldInput(event, rowIndex, cellIndex) {
         if (event.inputType === "insertText" || event.inputType === "insertReplacementText")
@@ -19,6 +22,19 @@
                 event.currentTarget.value = '';
             }
         }
+    }
+
+    function tooltip(node, options) {
+        const tooltip = tippy(node, options);
+
+        return {
+            update(options) {
+                tooltip.setProps(options);
+            },
+            destroy() {
+                tooltip.destroy();
+            }
+        };
     }
 </script>
 
@@ -78,12 +94,21 @@
                 <div class="clue">
                     <svg width="100%" height="100%" viewBox="0 0 100 100">
                         <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"/>
-                        <text x="5" y="95" stroke="white" font-size="50" fill="white">
-                            {cell.verticalClue>0?cell.verticalClue:''}
+
+                        {#if cell.verticalClue>0}
+                        <text x="5" y="95" stroke="white" font-size="50" fill="white"
+                              use:tooltip={{ allowHTML: true, content: combinations[2][cell.verticalClue], theme: 'material' }}>
+                            {cell.verticalClue}
                         </text>
-                        <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end">
-                            {cell.horizontalClue>0?cell.horizontalClue:''}
+                        {/if}
+
+                        {#if cell.horizontalClue>0}
+                        <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end"
+                              use:tooltip={{ allowHTML: true, content: combinations[2][cell.horizontalClue], theme: 'material' }}>
+                            {cell.horizontalClue}
                         </text>
+                        {/if}
+
                     </svg>
                 </div>
             {/if}
