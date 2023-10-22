@@ -6,22 +6,54 @@
     import {combinations} from "$lib/combinations.js";
 
     let board = new KakuroBoard();
+    export let inputtingHints = false;
 
-    function handleFieldInput(event, rowIndex, cellIndex) {
-        if (event.inputType === "insertText" || event.inputType === "insertReplacementText")
-        {
-            const value = parseInt(event.data);
-            if (!isNaN(value) && value>0)
-            {
-                board.board[rowIndex][cellIndex].value = value;
-                event.currentTarget.value = value;
+    let iShiftReleaseTime = Date.now();
+
+    function handleFieldKeydown(event, rowIndex, cellIndex) {
+        const fKeyRe = new RegExp("^F\\d\\d?$");
+        if (!fKeyRe.test(event.code)) event.preventDefault();
+        if (event.repeat) return;
+
+        if (event.key === "Shift") {
+            inputtingHints = true;
+            return;
+        }
+        if (event.key === "Backspace") {
+            if (board.board[rowIndex][cellIndex].value === 0) {
+                board.board[rowIndex][cellIndex].potentialValues.clear();
             }
-            else
-            {
+            board.board[rowIndex][cellIndex].value = 0;
+            return;
+        }
+
+        const digitRe = new RegExp("^(Digit|Numpad)\\d$");
+        let value;
+        if (digitRe.test(event.code)) value = parseInt(event.code.slice(-1));
+        else value = parseInt(event.key);
+
+        if (!isNaN(value) && value>0)
+        {
+            if(inputtingHints || (Date.now() - iShiftReleaseTime) < 20) {
+                board.board[rowIndex][cellIndex].switchPotentialValue(value);
                 board.board[rowIndex][cellIndex].value = 0;
                 event.currentTarget.value = '';
             }
+            else {
+                board.board[rowIndex][cellIndex].value = value;
+                event.currentTarget.value = value;
+            }
         }
+    }
+
+    function handleFieldKeyup(event, rowIndex, cellIndex) {
+        event.preventDefault();
+        if (event.repeat) return;
+        if (event.key === "Shift") {
+            iShiftReleaseTime = Date.now();
+            inputtingHints = false;
+        }
+
     }
 
     export let showTooltipHints = true;
@@ -45,8 +77,9 @@
 <style>
     .kakuro-board {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2px;
+        grid-template-columns: repeat(var(--board-width), 1fr);
+        grid-gap: 0;
+        max-width: 40px;
     }
 
     .cell {
@@ -58,44 +91,68 @@
         border: 1px solid #ccc;
     }
 
-    .clue {
-        width: 40px;
-        height: 40px;
-        text-align: left;
-        line-height: 40px;
-        font-size: 20px;
-        border: 1px solid #ccc;
+    .cell.clue {
         background: black;
     }
 
     input {
         width: 90%;
-        height: 90%;
+        height: 95%;
         border: none;
         text-align: center;
-        font-size: 20px;
-        appearance: none;
+        font-size: 35px;
+        appearance: textfield;
+        caret-color: transparent;
         -webkit-appearance: none;
         -moz-appearance: textfield;
     }
+
+    label {
+        position: relative;
+    }
+
+    .icon {
+        position: absolute;
+        display: inline-block;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
 </style>
 
-<div class="kakuro-board" style="grid-template-columns: repeat({board.height}, 1fr);">
+<div class="kakuro-board" style:--board-width={board.width}>
     {#each board.board as row, rowIndex}
-        {#each row as cell, cellIndex}
+        {#each row as cell, columnIndex}
             {#if cell.type === CellType.Field}
             <div class="cell">
+                <label class="name-label">
+                {#if cell.value===0}
+                    <svg class="icon" width="40px" height="40px" viewBox="0 -25 100 100">
+                        {#each cell.potentialValues as val}
+                        <text x={5+33*((val-1)%3)} y={5+33*Math.floor((val-1)/3)} stroke="black" font-size="40" fill="black">
+                            {val}
+                        </text>
+                        {/each}
+                    </svg>
+                {/if}
+
                 <input
                         type="number"
                         value={cell.value>0?cell.value:''}
-                        min="0"
+                        min="1"
                         max="9"
-                        on:input={(event) => handleFieldInput(event, rowIndex, cellIndex)}
-
+                        maxlength="0"
+                        on:keydown={(event) => handleFieldKeydown(event, rowIndex, columnIndex)}
+                        on:keyup={(event) => handleFieldKeyup(event, rowIndex, columnIndex)}
+                        on:input={(e)=>console.log(e)}
                 />
+                </label>
             </div>
             {:else}
-                <div class="clue">
+                <div class="cell clue">
                     <svg width="100%" height="100%" viewBox="0 0 100 100">
                         <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"/>
 

@@ -2,6 +2,7 @@
     import KakuroBoardView from '$lib/KakuroBoardView.svelte';
 
     let showingHints = true;
+    let pencilMarking = false;
 </script>
 
 <main>
@@ -11,7 +12,14 @@
             Show hint tooltips
         </label>
     </p>
-    <KakuroBoardView showTooltipHints={showingHints}/>
+    <p>
+        <label>
+            <input type="checkbox" bind:checked={pencilMarking}>
+            Input pencil marks
+        </label>
+    </p>
+
+    <KakuroBoardView showTooltipHints={showingHints} bind:inputtingHints={pencilMarking}/>
 </main>
 
 <style>

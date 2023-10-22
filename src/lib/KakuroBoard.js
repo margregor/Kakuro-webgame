@@ -4,12 +4,16 @@ export const CellType = {
 }
 
 class Cell {
-    constructor(type, values=[]) {
+    constructor(type, values=[], initPotentials=false) {
         this.type = CellType.Field;
         this.value = 0;
         this.horizontalClue = 0;
         this.verticalClue = 0;
-        this.potentialValues = [];
+
+        if (initPotentials)
+            this.potentialValues = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        else
+            this.potentialValues = new Set();
 
         this.type = type;
         switch (true) {
@@ -21,6 +25,9 @@ class Cell {
                 if (values.length >= 2) this.horizontalClue = values[1];
                 break;
         }
+    }
+    switchPotentialValue(val) {
+        this.potentialValues.has(val) ? this.potentialValues.delete(val) : this.potentialValues.add(val);
     }
 }
 

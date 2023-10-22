@@ -1,4 +1,4 @@
-export var combinations = {
+export const combinations = {
     2: {3 :	"1+2",
         4 :	"1+3",
         5 :	"1+4<br/>2+3",
