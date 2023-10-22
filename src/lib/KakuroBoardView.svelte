@@ -24,7 +24,11 @@
         }
     }
 
+    export let showTooltipHints = true;
+
     function tooltip(node, options) {
+        if (!showTooltipHints) return;
+
         const tooltip = tippy(node, options);
 
         return {
@@ -95,19 +99,21 @@
                     <svg width="100%" height="100%" viewBox="0 0 100 100">
                         <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"/>
 
-                        {#if cell.verticalClue>0}
-                        <text x="5" y="95" stroke="white" font-size="50" fill="white"
-                              use:tooltip={{ allowHTML: true, content: combinations[2][cell.verticalClue], theme: 'material' }}>
-                            {cell.verticalClue}
-                        </text>
-                        {/if}
+                        {#key showTooltipHints}
+                            {#if cell.verticalClue>0}
+                            <text x="5" y="95" stroke="white" font-size="50" fill="white"
+                                  use:tooltip={{ allowHTML: true, content: combinations[2][cell.verticalClue], theme: 'material' }}>
+                                {cell.verticalClue}
+                            </text>
+                            {/if}
 
-                        {#if cell.horizontalClue>0}
-                        <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end"
-                              use:tooltip={{ allowHTML: true, content: combinations[2][cell.horizontalClue], theme: 'material' }}>
-                            {cell.horizontalClue}
-                        </text>
-                        {/if}
+                            {#if cell.horizontalClue>0}
+                            <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end"
+                                  use:tooltip={{ allowHTML: true, content: combinations[2][cell.horizontalClue], theme: 'material' }}>
+                                {cell.horizontalClue}
+                            </text>
+                            {/if}
+                        {/key}
 
                     </svg>
                 </div>
