@@ -11,6 +11,11 @@
     let iShiftReleaseTime = Date.now();
 
     function handleFieldKeydown(event, rowIndex, cellIndex) {
+        if (event.key === "Unidentified") {
+            inputtingHints = !inputtingHints;
+            event.preventDefault();
+            return;
+        }
         const fKeyRe = new RegExp("^F\\d\\d?$");
         if (!fKeyRe.test(event.code)) event.preventDefault();
         if (event.repeat) return;
@@ -24,6 +29,7 @@
                 board.board[rowIndex][cellIndex].potentialValues.clear();
             }
             board.board[rowIndex][cellIndex].value = 0;
+            event.currentTarget.value = '';
             return;
         }
 
@@ -147,7 +153,7 @@
                         maxlength="0"
                         on:keydown={(event) => handleFieldKeydown(event, rowIndex, columnIndex)}
                         on:keyup={(event) => handleFieldKeyup(event, rowIndex, columnIndex)}
-                        on:input={(e)=>console.log(e)}
+                        on:input={(e)=>e.currentTarget.value = cell.value ? cell.value : ''}
                 />
                 </label>
             </div>
