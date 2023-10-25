@@ -11,7 +11,7 @@
     let iShiftReleaseTime = Date.now();
 
     function handleFieldKeydown(event, rowIndex, cellIndex) {
-        if (event.key === "Unidentified") {
+        if (event.key === "Unidentified" || event.key === "-") {
             inputtingHints = !inputtingHints;
             event.preventDefault();
             return;
@@ -20,7 +20,7 @@
         if (!fKeyRe.test(event.code)) event.preventDefault();
         if (event.repeat) return;
 
-        if (event.key === "Shift") {
+        if (event.key === "Control") {
             inputtingHints = true;
             return;
         }
@@ -55,7 +55,7 @@
     function handleFieldKeyup(event, rowIndex, cellIndex) {
         event.preventDefault();
         if (event.repeat) return;
-        if (event.key === "Shift") {
+        if (event.key === "Control") {
             iShiftReleaseTime = Date.now();
             inputtingHints = false;
         }
