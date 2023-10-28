@@ -10,7 +10,38 @@
 
     let iShiftReleaseTime = Date.now();
 
-    function handleFieldKeydown(event, rowIndex, cellIndex) {
+    function handleFieldKeydown(event, rowIndex, columnIndex) {
+        // console.log(board.board[rowIndex][cellIndex].input);
+
+        //console.log(toFocus = document.getElementById("input"+(columnIndex+1)+"x"+rowIndex));
+        if (event.key.length>=7) {
+            let toFocus;
+
+            switch (event.key.slice(5)) {
+                case "Up":
+                    // noinspection JSAssignmentUsedAsCondition
+                    if (toFocus = document.getElementById("input"+(columnIndex)+"x"+(rowIndex-1)))
+                        toFocus.focus();
+                    break;
+                case "Down":
+                    // noinspection JSAssignmentUsedAsCondition
+                    if (toFocus = document.getElementById("input"+(columnIndex)+"x"+(rowIndex+1)))
+                        toFocus.focus();
+                    break;
+                case "Left":
+                    // noinspection JSAssignmentUsedAsCondition
+                    if (toFocus = document.getElementById("input"+(columnIndex-1)+"x"+(rowIndex)))
+                        toFocus.focus();
+                    break;
+                case "Right":
+                    // noinspection JSAssignmentUsedAsCondition
+                    if (toFocus = document.getElementById("input"+(columnIndex+1)+"x"+(rowIndex)))
+                        toFocus.focus();
+                    break;
+                default:
+                    break;
+            }
+        }
         if (event.key === "Unidentified" || event.key === "-") {
             inputtingHints = !inputtingHints;
             event.preventDefault();
@@ -25,10 +56,10 @@
             return;
         }
         if (event.key === "Backspace") {
-            if (board.board[rowIndex][cellIndex].value === 0) {
-                board.board[rowIndex][cellIndex].potentialValues.clear();
+            if (board.board[rowIndex][columnIndex].value === 0) {
+                board.board[rowIndex][columnIndex].potentialValues.clear();
             }
-            board.board[rowIndex][cellIndex].value = 0;
+            board.board[rowIndex][columnIndex].value = 0;
             event.currentTarget.value = '';
             return;
         }
@@ -41,17 +72,18 @@
         if (!isNaN(value) && value>0)
         {
             if(inputtingHints || (Date.now() - iShiftReleaseTime) < 20) {
-                board.board[rowIndex][cellIndex].switchPotentialValue(value);
-                board.board[rowIndex][cellIndex].value = 0;
+                board.board[rowIndex][columnIndex].switchPotentialValue(value);
+                board.board[rowIndex][columnIndex].value = 0;
                 event.currentTarget.value = '';
             }
             else {
-                board.board[rowIndex][cellIndex].value = value;
+                board.board[rowIndex][columnIndex].value = value;
                 event.currentTarget.value = value;
             }
         }
     }
 
+    // noinspection JSUnusedLocalSymbols
     function handleFieldKeyup(event, rowIndex, cellIndex) {
         event.preventDefault();
         if (event.repeat) return;
@@ -69,6 +101,7 @@
 
         const tooltip = tippy(node, options);
 
+        // noinspection JSUnusedGlobalSymbols
         return {
             update(options) {
                 tooltip.setProps(options);
@@ -146,6 +179,7 @@
                 {/if}
 
                 <input
+                        id="input{columnIndex}x{rowIndex}"
                         type="number"
                         value={cell.value>0?cell.value:''}
                         min="1"
