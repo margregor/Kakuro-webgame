@@ -20,7 +20,7 @@
         </label>
     </p>
 
-    <KakuroBoardView showTooltipHints={showingHints} inputtingHints={pencilMarking} bind:complete/>
+    <KakuroBoardView showTooltipHints={showingHints} bind:inputtingHints={pencilMarking} bind:complete/>
     <span> {@html complete?"You did it!":"<br/>"} </span>
 
 </main>
