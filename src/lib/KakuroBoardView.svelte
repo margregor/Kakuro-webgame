@@ -7,13 +7,9 @@
 
     let board = new KakuroBoard();
     export let inputtingHints = false;
-
-    let iShiftReleaseTime = Date.now();
+    export let complete = false;
 
     function handleFieldKeydown(event, rowIndex, columnIndex) {
-        // console.log(board.board[rowIndex][cellIndex].input);
-
-        //console.log(toFocus = document.getElementById("input"+(columnIndex+1)+"x"+rowIndex));
         if (event.key.length>=7) {
             let toFocus;
 
@@ -71,7 +67,7 @@
 
         if (!isNaN(value) && value>0)
         {
-            if(inputtingHints || (Date.now() - iShiftReleaseTime) < 20) {
+            if(inputtingHints) {
                 board.board[rowIndex][columnIndex].switchPotentialValue(value);
                 board.board[rowIndex][columnIndex].value = 0;
                 event.currentTarget.value = '';
@@ -79,6 +75,9 @@
             else {
                 board.board[rowIndex][columnIndex].value = value;
                 event.currentTarget.value = value;
+                board.getHorizontalRun(columnIndex, rowIndex).checkFullfillment();
+                board.getVerticalRun(columnIndex, rowIndex).checkFullfillment();
+                complete = board.checkSolution();
             }
         }
     }
@@ -88,7 +87,6 @@
         event.preventDefault();
         if (event.repeat) return;
         if (event.key === "Control") {
-            iShiftReleaseTime = Date.now();
             inputtingHints = false;
         }
 
@@ -167,7 +165,7 @@
         {#each row as cell, columnIndex}
             {#if cell.type === CellType.Field}
             <div class="cell">
-                <label class="name-label">
+                <label>
                 {#if cell.value===0}
                     <svg class="icon" width="40px" height="40px" viewBox="0 -25 100 100">
                         {#each cell.potentialValues as val}
@@ -193,9 +191,14 @@
             </div>
             {:else}
                 <div class="cell clue">
-                    <svg width="100%" height="100%" viewBox="0 0 100 100">
+                    <svg width="100%" height="100%" viewBox="0 0 100 100" id="clue{columnIndex}x{rowIndex}">
                         <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"/>
-
+                        {#if cell.horizontalFulfilled}
+                            <polygon points="0,0 100,0 100,100" fill="green"/>
+                        {/if}
+                        {#if cell.verticalFulfilled}
+                            <polygon points="0,0 0,100 100,100" fill="green"/>
+                        {/if}
                         {#key showTooltipHints}
                             {#if cell.verticalClue>0}
                             <text x="5" y="95" stroke="white" font-size="50" fill="white"
@@ -209,7 +212,7 @@
                                   use:tooltip={{ allowHTML: true, content: combinations[2][cell.horizontalClue], theme: 'material' }}>
                                 {cell.horizontalClue}
                             </text>
-                            {/if}
+                        {/if}
                         {/key}
 
                     </svg>

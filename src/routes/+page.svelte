@@ -3,6 +3,7 @@
 
     let showingHints = true;
     let pencilMarking = false;
+    let complete = false;
 </script>
 
 <main>
@@ -19,7 +20,9 @@
         </label>
     </p>
 
-    <KakuroBoardView showTooltipHints={showingHints} bind:inputtingHints={pencilMarking}/>
+    <KakuroBoardView showTooltipHints={showingHints} inputtingHints={pencilMarking} bind:complete/>
+    <span> {@html complete?"You did it!":"<br/>"} </span>
+
 </main>
 
 <style>
