@@ -132,7 +132,7 @@
         background: black;
     }
 
-    input {
+    input[type=number] {
         width: 90%;
         height: 95%;
         border: none;
@@ -140,8 +140,13 @@
         font-size: 35px;
         appearance: textfield;
         caret-color: transparent;
-        -webkit-appearance: none;
         -moz-appearance: textfield;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
 
     label {
