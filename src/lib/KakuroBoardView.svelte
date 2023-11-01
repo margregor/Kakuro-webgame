@@ -5,7 +5,7 @@
     import 'tippy.js/themes/material.css';
     import {combinations} from "$lib/combinations.js";
 
-    let board = new KakuroBoard();
+    export let board = new KakuroBoard();
     export let inputtingHints = false;
     export let complete = false;
 
@@ -75,8 +75,8 @@
             else {
                 board.board[rowIndex][columnIndex].value = value;
                 event.currentTarget.value = value;
-                board.getHorizontalRun(columnIndex, rowIndex).checkFullfillment();
-                board.getVerticalRun(columnIndex, rowIndex).checkFullfillment();
+                board.getHorizontalRun(columnIndex, rowIndex)?.checkFullfillment();
+                board.getVerticalRun(columnIndex, rowIndex)?.checkFullfillment();
                 complete = board.checkSolution();
             }
         }

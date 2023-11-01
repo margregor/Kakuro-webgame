@@ -1,9 +1,24 @@
 <script>
     import KakuroBoardView from '$lib/KakuroBoardView.svelte';
 
+
     let showingHints = true;
     let pencilMarking = false;
     let complete = false;
+
+    let currentBoard;
+
+    async function refreshBoard() {
+        currentBoard = currentBoard;
+    }
+    async function generateNewBoard(e) {
+
+        e.srcElement.disabled = true;
+        await currentBoard.generateRandom(15, 15, refreshBoard, 1);
+        currentBoard = currentBoard;
+
+        e.srcElement.disabled = false;
+    }
 </script>
 
 <main>
@@ -19,8 +34,9 @@
             Input pencil marks
         </label>
     </p>
+    <button on:click={generateNewBoard}>Generate new 10 by 10 board</button>
 
-    <KakuroBoardView showTooltipHints={showingHints} bind:inputtingHints={pencilMarking} bind:complete/>
+    <KakuroBoardView bind:board={currentBoard} showTooltipHints={showingHints} bind:inputtingHints={pencilMarking} bind:complete/>
     <span> {@html complete?"You did it!":"<br/>"} </span>
 
 </main>
