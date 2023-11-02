@@ -31,6 +31,8 @@ class Cell {
         this.value = 0;
         this.horizontalClue = 0;
         this.verticalClue = 0;
+        this.positionX = -1;
+        this.positionY = -1;
 
         this.horizontalFulfilled = false;
         this.verticalFulfilled = false;
@@ -252,21 +254,27 @@ export class KakuroBoard {
         this.board = [];
         this.width = w;
         this.height = h;
-        const hash = (x, y) => x*Math.max(w+1,h+1) + y;
-        const unhash = (v) => [Math.floor(v/Math.max(w+1,h+1)), v%Math.max(w+1,h+1)];
+        const hash = (x, y) => x*Math.max(100,w+1,h+1) + y;
+        const unhash = (v) => [Math.floor(v/Math.max(100,w+1,h+1)), v%Math.max(100,w+1,h+1)];
         const toFill = new Set();
         for (let i = 0; i < h; i++) {
             let row = [];
             this.board.push(row);
             for (let j = 0; j < w; j++) {
-                row.push(new Cell(CellType.Clue));
+                //const tmp = new Cell(!(j && i)?CellType.Clue:CellType.Field, [], true);
+                const tmp = new Cell(CellType.Clue, [], true);
+                tmp.positionY = j;
+                tmp.positionX = i;
+                row.push(tmp);
                 if (j && i) toFill.add(hash(j, i));
             }
         }
 
         const neighbours = new Set();
-        neighbours.add(Array.from(toFill)[Math.floor(Math.random()*toFill.size)]);
+        const initial = Array.from(toFill)[Math.floor(Math.random()*toFill.size)];
+        neighbours.add(initial);
 
+        let iteration = 0;
         while (neighbours.size > 0) {
             const picked = Array.from(neighbours)[Math.floor(Math.random()*neighbours.size)];
             neighbours.delete(picked);
@@ -275,41 +283,83 @@ export class KakuroBoard {
             const coords = unhash(picked);
             const cx = coords[0];
             const cy = coords[1];
-            [[cx+1, cy], [cx-1, cy], [cx, cy-1], [cx, cy+1]].forEach((pair) => {
-                const h = hash(...pair);
-                if (toFill.has(h)) {
-                    neighbours.add(h);
-                }
-            });
 
             const cell = this.board[cy][cx];
+            cell.type = CellType.Field;
 
-
-            const runs = [this.getHorizontalRun(cx, cy, true),
-                               this.getVerticalRun(cx, cy, true)];
-            const something = Math.max(runs[0].containedCells.length,
-                                                 runs[1].containedCells.length);
-
-            const possibles = new Set([1,2,3,4,5,6,7,8,9]);
-
-
-            const visibleValues = this.getVisibleValues(cx, cy);
-            if (!visibleValues) continue;
-            visibleValues.horizontal.forEach((v)=> possibles.delete(v));
-            visibleValues.vertical.forEach((v)=> possibles.delete(v));
-
-            if (possibles.size !== 0) {
-                cell.type = CellType.Field;
-                cell.value = Array.from(possibles)[Math.floor(Math.random()*possibles.size)];
+            if (!(iteration++)) {
+                [[cx+1, cy], [cx-1, cy], [cx, cy-1], [cx, cy+1]].forEach((pair) => {
+                    const h = hash(...pair);
+                    if (toFill.has(h)) {
+                        neighbours.add(h);
+                    }
+                });
+                continue;
             }
+
+            const hrun = this.getHorizontalRun(cx, cy, true).containedCells.length;
+            const vrun = this.getVerticalRun(cx, cy, true).containedCells.length;
+
+            if (hrun > 9 || vrun > 9) {
+                cell.type = CellType.Clue;
+                continue;
+            }
+
+            if (hrun === 2 || vrun === 2 || Math.random()-(0.25*iteration/(w*h)) > 0.11*Math.max(hrun, vrun)) {
+                [[cx+1, cy], [cx-1, cy], [cx, cy-1], [cx, cy+1]].forEach((pair) => {
+                    const h = hash(...pair);
+                    if (toFill.has(h)) {
+                        neighbours.add(h);
+                    }
+                });
+
+                if(refreshFunc) await refreshFunc();
+                if(timeStep) await new Promise(r => setTimeout(r, timeStep));
+                continue;
+            }
+
+            cell.type = CellType.Clue;
 
             if(refreshFunc) await refreshFunc();
             if(timeStep) await new Promise(r => setTimeout(r, timeStep));
         }
 
+        /*const runLengthTest = (l) => l>9 || l===1;
+        let again = false;
+        do {
+            again = false;
+            for (let i = 0; i < h; i++) {
+                for (let j = 0; j < w; j++) {
+                    this.board[j][i].value = 0;
+                    if (this.board[j][i].type === CellType.Field) continue;
+                    const hrun = this.getHorizontalRun(i, j, true);
+                    const vrun = this.getVerticalRun(i, j, true);
+                    if (!hrun && !vrun) continue;
+
+                    if (hrun && runLengthTest(hrun.containedCells.length)) {
+                        const tmp = Math.floor(Math.random()*hrun.containedCells.length);
+                        hrun.containedCells[tmp].type = CellType.Clue;
+                        if(refreshFunc) await refreshFunc();
+                        if(timeStep) await new Promise(r => setTimeout(r, timeStep));
+                        again = true;
+                    }
+
+                    if (vrun && runLengthTest(vrun.containedCells.length)) {
+                        const tmp = Math.floor(Math.random()*vrun.containedCells.length);
+                        vrun.containedCells[tmp].type = CellType.Clue;
+                        if(refreshFunc) await refreshFunc();
+                        if(timeStep) await new Promise(r => setTimeout(r, timeStep));
+                        again = true;
+                    }
+
+                }
+            }
+
+        } while(again)*/
 
 
-        refreshFunc();
+        if(refreshFunc) await refreshFunc();
+        if(timeStep) await new Promise(r => setTimeout(r, timeStep));
 
 
     }
