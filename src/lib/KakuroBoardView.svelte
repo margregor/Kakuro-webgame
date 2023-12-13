@@ -8,12 +8,14 @@
     export let board = new KakuroBoard();
     export let inputtingHints = false;
     export let complete = false;
+    export let tabNavigable = true;
 
     function handleFieldKeydown(event, rowIndex, columnIndex) {
+        if (event.code === "Tab") return;
         if (event.key.length>=7) {
             let toFocus;
 
-            switch (event.key.slice(5)) {
+            switch (event.code.slice(5)) {
                 case "Up":
                     // noinspection JSAssignmentUsedAsCondition
                     if (toFocus = document.getElementById("input"+(columnIndex)+"x"+(rowIndex-1)))
@@ -47,16 +49,18 @@
         if (!fKeyRe.test(event.code)) event.preventDefault();
         if (event.repeat) return;
 
-        if (event.key === "Control") {
+        if (event.key === "Alt" || event.key === "Control" || event.key === "Shift") {
             inputtingHints = true;
             return;
         }
-        if (event.key === "Backspace") {
+        if (event.code === "Backspace" || event.code === "Delete") {
             if (board.board[rowIndex][columnIndex].value === 0) {
                 board.board[rowIndex][columnIndex].potentialValues.clear();
             }
             board.board[rowIndex][columnIndex].value = 0;
             event.currentTarget.value = '';
+            board.getHorizontalRun(columnIndex, rowIndex)?.checkFullfillment();
+            board.getVerticalRun(columnIndex, rowIndex)?.checkFullfillment();
             return;
         }
 
@@ -78,6 +82,7 @@
                 board.getHorizontalRun(columnIndex, rowIndex)?.checkFullfillment();
                 board.getVerticalRun(columnIndex, rowIndex)?.checkFullfillment();
                 complete = board.checkSolution();
+
             }
         }
     }
@@ -86,7 +91,7 @@
     function handleFieldKeyup(event, rowIndex, cellIndex) {
         event.preventDefault();
         if (event.repeat) return;
-        if (event.key === "Control") {
+        if (event.key === "Alt" || event.key === "Control" || event.key === "Shift") {
             inputtingHints = false;
         }
 
@@ -165,39 +170,42 @@
 
 </style>
 
-<div class="kakuro-board" style:--board-width={board.width}>
+<div class="kakuro-board"  style:--board-width={board.width} style:--board-height={board.height}>
     {#each board.board as row, rowIndex}
         {#each row as cell, columnIndex}
             {#if cell.type === CellType.Field}
-            <div class="cell">
-                <label>
-                {#if cell.value===0}
-                    <svg class="icon" width="40px" height="40px" viewBox="0 -25 100 100">
-                        {#each cell.potentialValues as val}
-                        <text x={5+33*((val-1)%3)} y={5+33*Math.floor((val-1)/3)} stroke="black" font-size="40" fill="black">
-                            {val}
-                        </text>
-                        {/each}
-                    </svg>
-                {/if}
-
-                <input
-                        id="input{columnIndex}x{rowIndex}"
-                        type="number"
-                        value={cell.value>0?cell.value:''}
-                        min="1"
-                        max="9"
-                        maxlength="0"
-                        on:keydown={(event) => handleFieldKeydown(event, rowIndex, columnIndex)}
-                        on:keyup={(event) => handleFieldKeyup(event, rowIndex, columnIndex)}
-                        on:input={(e)=>e.currentTarget.value = cell.value ? cell.value : ''}
-                />
-                </label>
-            </div>
+                <div class="cell">
+                    <label>
+                        {#if cell.value===0}
+                            <svg class="icon" width="40px" height="40px" viewBox="0 -25 100 100">
+                                {#each cell.potentialValues as val}
+                                    <text
+                                            x={5+33*((val-1)%3)}
+                                            y={5+33*Math.floor((val-1)/3)}
+                                            stroke="black" font-size="40" fill="black">
+                                        {val}
+                                    </text>
+                                {/each}
+                            </svg>
+                        {/if}
+                        <input
+                                value={cell.value>0?cell.value:''}
+                                tabindex={tabNavigable?"-1":"0"}
+                                id="input{columnIndex}x{rowIndex}"
+                                type="number"
+                                min="1"
+                                max="9"
+                                maxlength="0"
+                                on:keydown={(event) => handleFieldKeydown(event, rowIndex, columnIndex)}
+                                on:keyup={(event) => handleFieldKeyup(event, rowIndex, columnIndex)}
+                                on:input={(e)=>e.currentTarget.value = cell.value ? cell.value : ''}
+                        />
+                    </label>
+                </div>
             {:else}
                 <div class="cell clue">
-                    <svg width="100%" height="100%" viewBox="0 0 100 100" id="clue{columnIndex}x{rowIndex}">
-                        <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"/>
+                    <svg width="40px" height="40px" viewBox="0 0 100 100" id="clue{columnIndex}x{rowIndex}">
+                        <line x1="0" y1="0" x2="100" y2="100" stroke="white" stroke-width="3px"  stroke-linecap="square"/>
                         {#if cell.horizontalFulfilled}
                             <polygon points="0,0 100,0 100,100" fill="green"/>
                         {/if}
@@ -206,20 +214,22 @@
                         {/if}
                         {#key showTooltipHints}
                             {#if cell.verticalClue>0}
-                            <text x="5" y="95" stroke="white" font-size="50" fill="white"
-                                  use:tooltip={{ allowHTML: true, content: combinations[2][cell.verticalClue], theme: 'material' }}>
-                                {cell.verticalClue}
-                            </text>
+                                <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+                                <text x="5" y="95" stroke="white" font-size="50" fill="white"
+                                      tabindex={tabNavigable&&showTooltipHints?"-1":"0"}
+                                      use:tooltip={{ allowHTML: true, content: combinations[board.getVerticalRun(columnIndex, rowIndex).containedCells.length][cell.verticalClue], theme: 'material' }}>
+                                    {cell.verticalClue}
+                                </text>
                             {/if}
-
                             {#if cell.horizontalClue>0}
-                            <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end"
-                                  use:tooltip={{ allowHTML: true, content: combinations[2][cell.horizontalClue], theme: 'material' }}>
-                                {cell.horizontalClue}
-                            </text>
-                        {/if}
+                                <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+                                <text x="95" y="40" stroke="white" font-size="50" fill="white" text-anchor="end"
+                                      tabindex={tabNavigable&&showTooltipHints?"-1":"0"}
+                                      use:tooltip={{ allowHTML: true, content: combinations[board.getHorizontalRun(columnIndex, rowIndex).containedCells.length][cell.horizontalClue], theme: 'material' }}>
+                                    {cell.horizontalClue}
+                                </text>
+                            {/if}
                         {/key}
-
                     </svg>
                 </div>
             {/if}

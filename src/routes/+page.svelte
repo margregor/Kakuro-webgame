@@ -8,20 +8,23 @@
 
     let currentBoard;
 
+    let width = 3;
+    let height = 3;
+
     async function refreshBoard() {
         currentBoard = currentBoard;
     }
     async function generateNewBoard(e) {
 
         e.srcElement.disabled = true;
-        await currentBoard.generateRandom(15, 15, refreshBoard, 1);
+        await currentBoard.generateRandom(width, height, refreshBoard, 0);
         currentBoard = currentBoard;
 
         e.srcElement.disabled = false;
     }
 </script>
 
-<main>
+<div>
     <p>
         <label>
             <input type="checkbox" bind:checked={showingHints}>
@@ -34,20 +37,22 @@
             Input pencil marks
         </label>
     </p>
-    <button on:click={generateNewBoard}>Generate new 10 by 10 board</button>
+    <div>
+        <label>
+            Width
+            <input bind:value={width} type="range" min="3" max="40" />
+        </label>
+        <label>
+            Height
+            <input bind:value={height} type="range" min="3" max="40" />
+        </label>
+    </div>
+    <button on:click={generateNewBoard}>Generate new {width} by {height} board</button>
 
-    <KakuroBoardView bind:board={currentBoard} showTooltipHints={showingHints} bind:inputtingHints={pencilMarking} bind:complete/>
     <span> {@html complete?"You did it!":"<br/>"} </span>
 
-</main>
+    <div>
+    <KakuroBoardView bind:board={currentBoard} showTooltipHints={showingHints} bind:inputtingHints={pencilMarking} bind:complete/>
+    </div>
+</div>
 
-<style>
-    main {
-        margin: 0;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        -ms-transform: translate(-50%, -50%);
-        transform: translate(-50%, -50%);
-    }
-</style>
