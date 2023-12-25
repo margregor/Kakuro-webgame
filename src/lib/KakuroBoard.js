@@ -207,6 +207,35 @@ export class KakuroBoard {
 			]
 		];
 	}
+
+	addRow() {
+		this.board.push([]);
+		for (let i = 0; i < this.width; i++) {
+			this.board[this.height].push(
+				new Cell(i ? CellType.Field : CellType.Clue, undefined, false, [i, this.height])
+			);
+		}
+		this.height++;
+	}
+	removeRow() {
+		this.height--;
+		this.board.pop();
+	}
+	addColumn() {
+		for (let i = 0; i < this.height; i++) {
+			this.board[i].push(
+				new Cell(i ? CellType.Field : CellType.Clue, undefined, false, [this.width, i])
+			);
+		}
+		this.width++;
+	}
+	removeColumn() {
+		for (let i = 0; i < this.height; i++) {
+			this.board[i].pop();
+		}
+		this.width--;
+	}
+
 	/**
 	 * @param x
 	 * @param y
@@ -432,12 +461,27 @@ export class KakuroBoard {
 		// initialize possible values
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
+				this.board[y][x].potentialValues.clear();
 				if (this.board[y][x].type !== CellType.Field) continue;
 				for (let i = 1; i <= 9; i++) {
 					this.board[y][x].potentialValues.add(i);
 				}
 			}
 		}
+		this.forEveryClue((cell) => {
+			for (const run of [
+				this.getHorizontalRun(cell.positionX, cell.positionY),
+				this.getVerticalRun(cell.positionX, cell.positionY)
+			]) {
+				if (run !== null) {
+					for (const containedCell of run.containedCells) {
+						for (const containedCell1 of run.containedCells) {
+							containedCell.potentialValues.delete(containedCell1.value);
+						}
+					}
+				}
+			}
+		});
 
 		let again;
 		do {

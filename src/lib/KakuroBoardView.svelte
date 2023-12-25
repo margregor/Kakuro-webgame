@@ -9,9 +9,23 @@
 	export let inputtingHints = false;
 	export let complete = false;
 	export let tabNavigable = true;
+	export let editing = false;
+
+	const focusKeeper = { use: false, rowIndex: -1, columnIndex: -1 };
 
 	function handleFieldKeydown(event, rowIndex, columnIndex) {
 		if (event.code === 'Tab') return;
+		if (editing && event.code === 'KeyC') {
+			board.board[rowIndex][columnIndex].potentialValues.clear();
+			board.board[rowIndex][columnIndex].value = 0;
+			board.board[rowIndex][columnIndex].horizontalClue = 0;
+			board.board[rowIndex][columnIndex].verticalClue = 0;
+			board.board[rowIndex][columnIndex].type = CellType.Clue;
+			focusKeeper.use = true;
+			focusKeeper.rowIndex = rowIndex;
+			focusKeeper.columnIndex = columnIndex;
+			return;
+		}
 		if (event.key.length >= 7) {
 			let toFocus;
 
@@ -20,20 +34,36 @@
 					// noinspection JSAssignmentUsedAsCondition
 					if ((toFocus = document.getElementById('input' + columnIndex + 'x' + (rowIndex - 1))))
 						toFocus.focus();
+					else if (
+						(toFocus = document.getElementById('vclue' + columnIndex + 'x' + (rowIndex - 1)))
+					)
+						toFocus.focus();
 					break;
 				case 'Down':
 					// noinspection JSAssignmentUsedAsCondition
 					if ((toFocus = document.getElementById('input' + columnIndex + 'x' + (rowIndex + 1))))
+						toFocus.focus();
+					else if (
+						(toFocus = document.getElementById('hclue' + columnIndex + 'x' + (rowIndex + 1)))
+					)
 						toFocus.focus();
 					break;
 				case 'Left':
 					// noinspection JSAssignmentUsedAsCondition
 					if ((toFocus = document.getElementById('input' + (columnIndex - 1) + 'x' + rowIndex)))
 						toFocus.focus();
+					else if (
+						(toFocus = document.getElementById('hclue' + (columnIndex - 1) + 'x' + rowIndex))
+					)
+						toFocus.focus();
 					break;
 				case 'Right':
 					// noinspection JSAssignmentUsedAsCondition
 					if ((toFocus = document.getElementById('input' + (columnIndex + 1) + 'x' + rowIndex)))
+						toFocus.focus();
+					else if (
+						(toFocus = document.getElementById('vclue' + (columnIndex + 1) + 'x' + rowIndex))
+					)
 						toFocus.focus();
 					break;
 				default:
@@ -53,7 +83,7 @@
 			inputtingHints = true;
 			return;
 		}
-		if (event.code === 'Backspace' || event.code === 'Delete') {
+		if (event.code === 'Backspace' || event.code === 'Delete' || event.keyCode === 8) {
 			if (board.board[rowIndex][columnIndex].value === 0) {
 				board.board[rowIndex][columnIndex].potentialValues.clear();
 			}
@@ -61,6 +91,7 @@
 			event.currentTarget.value = '';
 			board.getHorizontalRun(columnIndex, rowIndex)?.checkFullfillment();
 			board.getVerticalRun(columnIndex, rowIndex)?.checkFullfillment();
+			complete = board.checkSolution();
 			return;
 		}
 
@@ -110,6 +141,106 @@
 			}
 		};
 	}
+
+	function keepFocus(node, coords) {
+		if (
+			focusKeeper.use &&
+			focusKeeper.rowIndex === coords.rowIndex &&
+			focusKeeper.columnIndex === coords.columnIndex
+		) {
+			node.focus();
+		}
+		focusKeeper.use = false;
+	}
+
+	function handleClueKeydown(event, rowIndex, columnIndex, vertical) {
+		if (event.code === 'Tab') return;
+		event.preventDefault();
+		let horizontal = !vertical;
+		if (editing && event.code === 'KeyF') {
+			board.board[rowIndex][columnIndex].potentialValues.clear();
+			board.board[rowIndex][columnIndex].value = 0;
+			board.board[rowIndex][columnIndex].horizontalClue = 0;
+			board.board[rowIndex][columnIndex].verticalClue = 0;
+			board.board[rowIndex][columnIndex].type = CellType.Field;
+			focusKeeper.use = true;
+			focusKeeper.rowIndex = rowIndex;
+			focusKeeper.columnIndex = columnIndex;
+			return;
+		}
+		if (editing && event.code === 'KeyE') {
+			const result = Number(window.prompt('Type a number', event.srcElement.textContent));
+			if (!isNaN(result) && result >= 1 && result <= 45) {
+				if (horizontal) board.board[rowIndex][columnIndex].horizontalClue = result;
+				else board.board[rowIndex][columnIndex].verticalClue = result;
+			}
+			return;
+		}
+		if (event.key.length >= 7) {
+			let toFocus;
+
+			switch (event.code.slice(5)) {
+				case 'Up':
+					// noinspection JSAssignmentUsedAsCondition
+					if (horizontal) {
+						if ((toFocus = document.getElementById('input' + columnIndex + 'x' + (rowIndex - 1))))
+							toFocus.focus();
+						else if (
+							(toFocus = document.getElementById('vclue' + columnIndex + 'x' + (rowIndex - 1)))
+						)
+							toFocus.focus();
+					} else {
+						if ((toFocus = document.getElementById('hclue' + columnIndex + 'x' + rowIndex)))
+							toFocus.focus();
+					}
+					break;
+				case 'Down':
+					// noinspection JSAssignmentUsedAsCondition
+					if (vertical) {
+						if ((toFocus = document.getElementById('input' + columnIndex + 'x' + (rowIndex + 1))))
+							toFocus.focus();
+						else if (
+							(toFocus = document.getElementById('hclue' + columnIndex + 'x' + (rowIndex + 1)))
+						)
+							toFocus.focus();
+					} else {
+						if ((toFocus = document.getElementById('vclue' + columnIndex + 'x' + rowIndex)))
+							toFocus.focus();
+					}
+					break;
+				case 'Left':
+					// noinspection JSAssignmentUsedAsCondition
+					if (vertical) {
+						if ((toFocus = document.getElementById('input' + (columnIndex - 1) + 'x' + rowIndex)))
+							toFocus.focus();
+						else if (
+							(toFocus = document.getElementById('hclue' + (columnIndex - 1) + 'x' + rowIndex))
+						)
+							toFocus.focus();
+					} else {
+						if ((toFocus = document.getElementById('vclue' + columnIndex + 'x' + rowIndex)))
+							toFocus.focus();
+					}
+					break;
+				case 'Right':
+					// noinspection JSAssignmentUsedAsCondition
+					if (horizontal) {
+						if ((toFocus = document.getElementById('input' + (columnIndex + 1) + 'x' + rowIndex)))
+							toFocus.focus();
+						else if (
+							(toFocus = document.getElementById('vclue' + (columnIndex + 1) + 'x' + rowIndex))
+						)
+							toFocus.focus();
+					} else {
+						if ((toFocus = document.getElementById('hclue' + columnIndex + 'x' + rowIndex)))
+							toFocus.focus();
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
 </script>
 
 <div class="kakuro-board" style:--board-width={board.width} style:--board-height={board.height}>
@@ -137,6 +268,7 @@
 							value={cell.value > 0 ? cell.value : ''}
 							tabindex={tabNavigable ? '0' : '-1'}
 							id="input{columnIndex}x{rowIndex}"
+							use:keepFocus={{ columnIndex: columnIndex, rowIndex: rowIndex }}
 							type="number"
 							min="1"
 							max="9"
@@ -166,43 +298,50 @@
 							<polygon points="0,0 0,100 100,100" fill="green" />
 						{/if}
 						{#key showTooltipHints}
-							{#if cell.verticalClue > 0}
+							{#if cell.verticalClue > 0 || editing}
 								<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 								<text
+									on:keydown={(e) => handleClueKeydown(e, rowIndex, columnIndex, true)}
+									role="textbox"
+									id="vclue{columnIndex}x{rowIndex}"
 									x="5"
 									y="95"
 									stroke="white"
 									font-size="50"
 									fill="white"
-									tabindex={tabNavigable && showTooltipHints ? '0' : '-1'}
+									tabindex={(tabNavigable && showTooltipHints) || editing ? '0' : '-1'}
 									use:tooltip={{
 										allowHTML: true,
 										content:
 											combinations[
-												board.getVerticalRun(columnIndex, rowIndex).containedCells.length
-											][cell.verticalClue],
+												board.getVerticalRun(columnIndex, rowIndex)?.containedCells.length
+											]?.[cell.verticalClue],
 										theme: 'material'
 									}}
 								>
 									{cell.verticalClue}
 								</text>
 							{/if}
-							{#if cell.horizontalClue > 0}
+							{#if cell.horizontalClue > 0 || editing}
 								<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 								<text
+									on:keydown={(e) => handleClueKeydown(e, rowIndex, columnIndex, false)}
+									role="textbox"
+									id="hclue{columnIndex}x{rowIndex}"
 									x="95"
 									y="40"
 									stroke="white"
 									font-size="50"
 									fill="white"
 									text-anchor="end"
-									tabindex={tabNavigable && showTooltipHints ? '0' : '-1'}
+									use:keepFocus={{ columnIndex: columnIndex, rowIndex: rowIndex }}
+									tabindex={(tabNavigable && showTooltipHints) || editing ? '0' : '-1'}
 									use:tooltip={{
 										allowHTML: true,
 										content:
 											combinations[
-												board.getHorizontalRun(columnIndex, rowIndex).containedCells.length
-											][cell.horizontalClue],
+												board.getHorizontalRun(columnIndex, rowIndex)?.containedCells.length
+											]?.[cell.horizontalClue],
 										theme: 'material'
 									}}
 								>
