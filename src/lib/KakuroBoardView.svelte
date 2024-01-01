@@ -170,7 +170,7 @@
 		}
 		if (editing && event.code === 'KeyE') {
 			const result = Number(window.prompt('Type a number', event.srcElement.textContent));
-			if (!isNaN(result) && result >= 1 && result <= 45) {
+			if (!isNaN(result) && result >= 0 && result <= 45) {
 				if (horizontal) board.board[rowIndex][columnIndex].horizontalClue = result;
 				else board.board[rowIndex][columnIndex].verticalClue = result;
 			}

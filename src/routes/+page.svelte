@@ -1,5 +1,6 @@
 <script>
 	import KakuroBoardView from '$lib/KakuroBoardView.svelte';
+	import {boardToXml, XmlToBoard} from "$lib/KakuroBoard.js";
 
 	let showingHints = true;
 	let pencilMarking = false;
@@ -16,7 +17,8 @@
 	}
 	async function generateNewBoard(e) {
 		e.srcElement.disabled = true;
-		await currentBoard.generateRandom(generateWidth, generateHeight, null, 0);
+		while(await currentBoard.generateRandom(generateWidth, generateHeight, null, null)){};
+		currentBoard.checkSolutionAll()
 		currentBoard = currentBoard;
 
 		e.srcElement.disabled = false;
@@ -24,10 +26,38 @@
 
 	async function solveBoard(e) {
 		e.srcElement.disabled = true;
-		await currentBoard.solvePure();
+
+		// currentBoard.clear();
+		// console.time('newMethod');
+		// await currentBoard.solveStackBased(refreshBoard, 1, false);
+		// console.timeEnd('newMethod');
+
+		currentBoard.clear();
+		console.time('basicMethod');
+		await currentBoard.solveStackBased(refreshBoard, 1, true);
+		console.timeEnd('basicMethod');
+
 		complete = currentBoard.checkSolutionAll();
 		currentBoard = currentBoard;
 
+		e.srcElement.disabled = false;
+	}
+
+	async function solveBoardPure(e) {
+		e.srcElement.disabled = true;
+		await currentBoard.solvePure(refreshBoard, 1);
+		complete = currentBoard.checkSolutionAll();
+		currentBoard = currentBoard;
+
+		e.srcElement.disabled = false;
+	}
+	async function refineBoard(e) {
+		e.srcElement.disabled = true;
+
+		await currentBoard.refineGenerated(refreshBoard, 1);
+
+		complete=false;
+		currentBoard=currentBoard;
 		e.srcElement.disabled = false;
 	}
 </script>
@@ -100,9 +130,18 @@
 			<input bind:value={generateHeight} type="range" min="3" max="40" />
 		</label>
 	</div>
-	<button on:click={generateNewBoard}>Generate new {generateWidth} by {generateHeight} board</button
-	>
+	<button on:click={generateNewBoard}>Generate new {generateWidth} by {generateHeight} board</button>
 	<button on:click={solveBoard}>Try solve</button>
+	<button on:click={solveBoardPure}>Try solve pure</button>
+	<button on:click={()=>{currentBoard.clear();complete=false;currentBoard=currentBoard;}}>Clear board</button>
+	<button on:click={(e)=>{refineBoard(e)}}>Refine</button>
+	<button on:click={()=>{
+		localStorage.setItem("savedBoard", boardToXml(currentBoard))
+	}}>Save board to local storage</button>
+	<button on:click={()=>{
+		const toLoad = localStorage.getItem("savedBoard");
+		if (toLoad) currentBoard = XmlToBoard(toLoad);
+	}}>Load board from local storage</button>
 
 	<span> {@html complete ? 'You did it!' : '<br/>'} </span>
 
