@@ -15,6 +15,8 @@
 
 	function handleFieldKeydown(event, rowIndex, columnIndex) {
 		if (event.code === 'Tab') return;
+
+		//zmiana pola na czarne
 		if (editing && event.code === 'KeyC') {
 			board.board[rowIndex][columnIndex].potentialValues.clear();
 			board.board[rowIndex][columnIndex].value = 0;
@@ -26,6 +28,8 @@
 			focusKeeper.columnIndex = columnIndex;
 			return;
 		}
+
+		//zmiana zaznaczonego pola przez klawisze strzałek
 		if (event.key.length >= 7) {
 			let toFocus;
 
@@ -70,6 +74,7 @@
 					break;
 			}
 		}
+		//przełączenie trybu wpisywania cyfr pomocniczych na klawiaturze telefonu
 		if (event.key === 'Unidentified' || event.key === '-') {
 			inputtingHints = !inputtingHints;
 			event.preventDefault();
@@ -79,10 +84,12 @@
 		if (!fKeyRe.test(event.code)) event.preventDefault();
 		if (event.repeat) return;
 
+		//włączenie trybu wpisywania cyfr pomocniczych
 		if (event.key === 'Alt' || event.key === 'Control' || event.key === 'Shift') {
 			inputtingHints = true;
 			return;
 		}
+		//usunięcie wartości w polu
 		if (event.code === 'Backspace' || event.code === 'Delete' || event.keyCode === 8) {
 			if (board.board[rowIndex][columnIndex].value === 0) {
 				board.board[rowIndex][columnIndex].potentialValues.clear();
@@ -95,6 +102,7 @@
 			return;
 		}
 
+		//wpisanie wartości
 		const digitRe = new RegExp('^(Digit|Numpad)\\d$');
 		let value;
 		if (digitRe.test(event.code)) value = parseInt(event.code.slice(-1));
@@ -243,7 +251,7 @@
 	}
 </script>
 
-<div class="kakuro-board" style:--board-width={board.width} style:--board-height={board.height}>
+<div class="kakuro-board" style:--board-width={board.width}>
 	{#each board.board as row, rowIndex}
 		{#each row as cell, columnIndex}
 			{#if cell.type === CellType.Field}
@@ -270,9 +278,6 @@
 							id="input{columnIndex}x{rowIndex}"
 							use:keepFocus={{ columnIndex: columnIndex, rowIndex: rowIndex }}
 							type="number"
-							min="1"
-							max="9"
-							maxlength="0"
 							on:keydown={(event) => handleFieldKeydown(event, rowIndex, columnIndex)}
 							on:keyup={(event) => handleFieldKeyup(event, rowIndex, columnIndex)}
 							on:input={(e) => (e.currentTarget.value = cell.value ? cell.value : '')}

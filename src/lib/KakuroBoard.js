@@ -1,5 +1,4 @@
-import {combinations, sumSets} from '$lib/combinations.js';
-import xml2js from "xml2js";
+import { sumSets } from '$lib/combinations.js';
 
 /**
  * @enum {number}
@@ -118,13 +117,7 @@ class Run {
 				return this.clueCell.verticalFulfilled;
 		}
 	}
-	getSetOfValues() {
-		let presentValues = new Set();
-		this.containedCells.forEach((c) => {
-			presentValues.add(c.value);
-		});
-		return presentValues;
-	}
+
 	getEffectiveSizeAndTarget() {
 		let effectiveSize = this.containedCells.length;
 		let effectiveTarget = this.targetSum;
@@ -139,13 +132,7 @@ class Run {
 		if (effectiveSize > 0) return new Set(sumSets[effectiveSize][effectiveTarget]);
 		else return new Set();
 	}
-	getNumberOfEmpty() {
-		let n = 0;
-		for (const containedCell of this.containedCells) {
-			if (containedCell.value === 0) n++;
-		}
-		return n;
-	}
+
 	getEmptyCells() {
 		return this.containedCells.filter((cell) => cell.value === 0);
 	}
@@ -285,31 +272,7 @@ export class KakuroBoard {
 	 * @returns {{horizontal: Set<any>, vertical: Set<any>}|boolean}
 	 * visible values or false if any value repeats vertically or horizontally
 	 */
-	getVisibleValues(x, y) {
-		const startX = x;
-		const startY = y;
 
-		const hvals = new Set();
-		const vvals = new Set();
-
-		while (this.board[++y]?.[x]?.type === CellType.Field)
-			if (vvals.has(this.board[y][x].value)) return false;
-			else vvals.add(this.board[y][x].value);
-		y = startY;
-		while (this.board[--y]?.[x]?.type === CellType.Field)
-			if (vvals.has(this.board[y][x].value)) return false;
-			else vvals.add(this.board[y][x].value);
-		y = startY;
-		while (this.board[y]?.[++x]?.type === CellType.Field)
-			if (hvals.has(this.board[y][x].value)) return false;
-			else hvals.add(this.board[y][x].value);
-		x = startX;
-		while (this.board[y]?.[--x]?.type === CellType.Field)
-			if (hvals.has(this.board[y][x].value)) return false;
-			else hvals.add(this.board[y][x].value);
-
-		return { horizontal: hvals, vertical: vvals };
-	}
 	checkSolution() {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
@@ -443,49 +406,75 @@ export class KakuroBoard {
 	}
 
 	sumViabilityDL() {
+		//wartość zwraca, zmieniana na true w przypadku udanego ograniczenia stanów
 		let ret = false;
+
+		//rekurencyjna funkcja sprawdzająca możliwość utworzenia docelowej sumy
 		const canFormSum = (startIndex, cells, target, viableDigits, chosenNums) => {
-			if (cells.length-1 === startIndex) {
+			/*jeśli pozostała tylko jedna komórka, zwróć prawdę, jeśli jej
+			 lista dopuszczalnych wartości zawiera pozostałą sumę*/
+			if (cells.length - 1 === startIndex) {
 				if (!chosenNums.has(target) && cells[startIndex].potentialValues.has(target)) {
+					//wartości wykorzystane przy utworzeniu sumy są zapisywane z odniesieniem do danej komórki
 					viableDigits.get(cells[startIndex]).add(target);
 					viableDigits.sumCount++;
 					return true;
 				}
 				return false;
 			}
+			//zwracana wartość true przypadku możliwości skonstruowania sumy
 			let ret2 = false;
+			/*dla każdej wartości dopuszczalnej dla danej komórki i niewykorzystanej wcześniej
+			odejmujemy ją od docelowej sumy i rekurencyjnie sprawdzamy, czy pozostałe pola mogą utworzyć pozostałą sumę*/
 			for (const potentialValue of cells[startIndex].potentialValues) {
 				if (chosenNums.has(potentialValue)) continue;
 				chosenNums.add(potentialValue);
-				const res = canFormSum(startIndex+1, cells, target-potentialValue, viableDigits, chosenNums);
+				const res = canFormSum(
+					startIndex + 1,
+					cells,
+					target - potentialValue,
+					viableDigits,
+					chosenNums
+				);
 				chosenNums.delete(potentialValue);
 				if (res) {
+					//wartości wykorzystane przy utworzeniu sumy są zapisywane z odniesieniem do danej komórki
 					viableDigits.get(cells[startIndex]).add(potentialValue);
 					ret2 = true;
 				}
 			}
 			return ret2;
 		};
-		this.forEveryRun((run)=>{
+		//dla każdego ciągu sprawdzane są możliwe kombinacje sum
+		this.forEveryRun((run) => {
+			//w ciągu brane są pod uwagę tylko obecnie puste pola
 			const emptyCells = run.getEmptyCells();
-			if (emptyCells.length >0 && emptyCells.length <= 9) {
+			if (emptyCells.length > 0 && emptyCells.length <= 9) {
 				/**
 				 * @type {Map<Cell, Set<number>>}
 				 */
+				//inicjalizacja struktury przechowującej wykorzystane w konstrukcji sumy wartości
 				const viableDigits = new Map();
 				for (const emptyCell of emptyCells) {
 					viableDigits.set(emptyCell, new Set());
 				}
 				viableDigits.sumCount = 0;
 				const chosenNums = new Set();
-				canFormSum(0, emptyCells, run.getEffectiveSizeAndTarget().effectiveTarget, viableDigits, chosenNums);
+				canFormSum(
+					0,
+					emptyCells,
+					run.getEffectiveSizeAndTarget().effectiveTarget,
+					viableDigits,
+					chosenNums
+				);
 
 				for (const entry of viableDigits) {
-					run.orientation===RunOrientation.HORIZONTAL
-						?
-						entry[0].computedSumNumberHorizontal = viableDigits.sumCount
-						:
-						entry[0].computedSumNumberVertical = viableDigits.sumCount;
+					//ilość sposobów na skonstruowanie sumy docelowej przypisywane są polom planszy
+					//wykorzystywane są przy rozwiązywaniu ze stosem
+					run.orientation === RunOrientation.HORIZONTAL
+						? (entry[0].computedSumNumberHorizontal = viableDigits.sumCount)
+						: (entry[0].computedSumNumberVertical = viableDigits.sumCount);
+					//w każdej komórce wartości niewykorzystane przy konstrukcji sumy usuwane są z listy dopuszczalnych
 					for (const potentialValue of entry[0].potentialValues) {
 						if (!entry[1].has(potentialValue)) {
 							entry[0].potentialValues.delete(potentialValue);
@@ -512,7 +501,7 @@ export class KakuroBoard {
 		this.forEveryClue((cell) => {
 			for (const run of [
 				this.getHorizontalRun(cell.positionX, cell.positionY, true),
-				this.getVerticalRun(cell.positionX, cell.positionY, true  )
+				this.getVerticalRun(cell.positionX, cell.positionY, true)
 			]) {
 				if (run !== null) {
 					for (const containedCell of run.containedCells) {
@@ -532,11 +521,9 @@ export class KakuroBoard {
 	}
 
 	async refineGenerated(refreshFunc, timeStep) {
-
-
 		do {
 			this.clear();
-			if (!await this.solvePure(null, null, true)) {
+			if (!(await this.solvePure(null, null, true))) {
 				this.clearClues();
 				this.clear();
 				this.initializePossibleValues();
@@ -558,7 +545,7 @@ export class KakuroBoard {
 				this.randomlyFill();
 				continue;
 			}
-			if (!await this.solvePure(null, null, true)) {
+			if (!(await this.solvePure(null, null, true))) {
 				this.clearClues();
 				this.clear();
 				this.initializePossibleValues();
@@ -568,8 +555,7 @@ export class KakuroBoard {
 
 			if (refreshFunc) await refreshFunc();
 			if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-			if (refreshFunc && !timeStep) alert();
-		} while(!this.checkSolution())
+		} while (!this.checkSolution());
 
 		this.clear();
 
@@ -577,8 +563,8 @@ export class KakuroBoard {
 	}
 
 	getState() {
-		const ret = {possibles: [], values: []};
-		this.forEveryField((cell)=> {
+		const ret = { possibles: [], values: [] };
+		this.forEveryField((cell) => {
 			ret.values.push(cell.value);
 			ret.possibles.push(Array.from(cell.potentialValues));
 		});
@@ -591,12 +577,12 @@ export class KakuroBoard {
 	setState(state) {
 		const myStateValues = [...state.values];
 		myStateValues.reverse();
-		const myStatePossibles = [...state.possibles]
+		const myStatePossibles = [...state.possibles];
 		myStatePossibles.reverse();
-		this.forEveryField((cell)=> {
+		this.forEveryField((cell) => {
 			cell.value = myStateValues.pop();
 			cell.potentialValues.clear();
-			myStatePossibles.pop().forEach((n)=>cell.potentialValues.add(n));
+			myStatePossibles.pop().forEach((n) => cell.potentialValues.add(n));
 		});
 	}
 
@@ -609,60 +595,62 @@ export class KakuroBoard {
 	async solvePure(refreshFunc, timeStep, initializePotentials = true) {
 		if (initializePotentials) this.initializePossibleValues();
 
+		//pętla wykorzystuje metody ograniczające przestrzeń stanów, dopóki mają efekt na planszy
 		let again;
 		do {
+			//Poprzez lazy evaluation sumViabilityDL jest wywoływane tylko, jeśli intersectionDL nie miało efektów.
+			//Możliwe jest dodanie nowych metod ograniczających oddzielonych operatorem ||
 			again = this.intersectionDL() || this.sumViabilityDL();
 			if (!again) break;
-			// if (refreshFunc) await refreshFunc();
-			// if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-			// alert();
 		} while (this.searchForSolved() || again);
 
+		/*jeśli napotkane jest puste pole z pustą listą dopuszczalnych wartości, plansza uznawana jest za niemożliwa
+		do rozwiązania i zwracany jest fałsz*/
 		let ret = true;
-		this.forEveryField((cell)=>{
-				if (cell.value===0 && cell.potentialValues.size === 0) {
-					ret = false;
-					return true;
-				}
+		this.forEveryField((cell) => {
+			if (cell.value === 0 && cell.potentialValues.size === 0) {
+				ret = false;
+				//zwrócenie prawdy wewnątrz metod forEveryX zatrzymuje iterację
+				return true;
 			}
-		);
+		});
 
 		return ret;
 	}
 
 	clear() {
-		this.forEveryCell((cell)=>{
+		this.forEveryCell((cell) => {
 			cell.potentialValues.clear();
-			cell.value=0;
-			cell.horizontalFulfilled=false;
-			cell.verticalFulfilled=false;
-		})
+			cell.value = 0;
+			cell.horizontalFulfilled = false;
+			cell.verticalFulfilled = false;
+		});
 	}
 
 	checkValidity() {
 		let ret = true;
-		this.forEveryRun((run) =>{
-			if (run.getEmptyCells().length<=0 && !run.checkFullfillment()) {
+		this.forEveryRun((run) => {
+			if (run.getEmptyCells().length <= 0 && !run.checkFullfillment()) {
 				ret = false;
 				return true;
 			}
 		});
 		return ret;
-
 	}
 
-	async solveStackBased(refreshFunc, timeStep, cellSelection) {
-		if (!await this.solvePure(refreshFunc, timeStep, true)) return false;
+	async solveStackBased(refreshFunc, timeStep, cellSelectionMethod) {
+		if (!(await this.solvePure(refreshFunc, timeStep, true))) return false;
 		if (this.checkSolution()) return true;
 
+		//inicjalizacja stosu
 		const stateStack = [];
 		stateStack.push(this.getState());
 
 		if (refreshFunc) await refreshFunc();
 		if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-		if (refreshFunc && !timeStep) alert();
 
-		while (stateStack.length>0) {
+		//pętla jest przerywana, jeśli stos jest pusty
+		while (stateStack.length > 0) {
 			const currentState = stateStack.pop();
 			this.setState(currentState);
 
@@ -670,20 +658,29 @@ export class KakuroBoard {
 			let minPossibles = Infinity;
 			let minSumCombinations = Infinity;
 
-
-			if (cellSelection) {
+			if (cellSelectionMethod) {
+				//wybierane jest pole z minimalnym rozmiarem listy wartości dopuszczalnych
 				this.forEveryField((cell) => {
 					if (cell.value === 0 && cell.potentialValues.size < minPossibles) {
 						chosenCell = cell;
 						minPossibles = cell.potentialValues.size;
 					}
 				});
-			}
-			else {
+			} else {
 				this.forEveryField((cell) => {
-					if (cell.value === 0 && Math.min(cell.computedSumNumberHorizontal, cell.computedSumNumberVertical) <= minSumCombinations) {
-						if (Math.min(cell.computedSumNumberHorizontal, cell.computedSumNumberVertical) < minSumCombinations) {
-							minSumCombinations = Math.min(cell.computedSumNumberHorizontal, cell.computedSumNumberVertical);
+					if (
+						cell.value === 0 &&
+						Math.min(cell.computedSumNumberHorizontal, cell.computedSumNumberVertical) <=
+							minSumCombinations
+					) {
+						if (
+							Math.min(cell.computedSumNumberHorizontal, cell.computedSumNumberVertical) <
+							minSumCombinations
+						) {
+							minSumCombinations = Math.min(
+								cell.computedSumNumberHorizontal,
+								cell.computedSumNumberVertical
+							);
 							minPossibles = cell.potentialValues.size;
 							chosenCell = cell;
 						} else if (cell.potentialValues.size < minPossibles) {
@@ -694,6 +691,8 @@ export class KakuroBoard {
 				});
 			}
 			if (!chosenCell) continue;
+			/*z listy wartości dopuszczalnych wylosowanego pola wybierana
+			jest jedna cyfra i ustawiana jest jako jedyna możliwa*/
 			if (chosenCell.potentialValues.size === 0) continue;
 			if (chosenCell.potentialValues.size === 1) {
 				chosenCell.value = Array.from(chosenCell.potentialValues)[0];
@@ -704,18 +703,18 @@ export class KakuroBoard {
 
 			if (refreshFunc) await refreshFunc();
 			if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-			if (refreshFunc && !timeStep) alert();
 
-			if (!await this.solvePure(refreshFunc, timeStep, false) || !this.checkValidity()) {
+			if (!(await this.solvePure(refreshFunc, timeStep, false)) || !this.checkValidity()) {
 				if (refreshFunc) await refreshFunc();
 				if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-				if (refreshFunc && !timeStep) alert();
-
+				/*jeśli osiągnięty stan nie może doprowadzić do rozwiązania, przywracany jest stan początkowy
+				iteracji i wybrana cyfra jest eliminowana z listy wartości dopuszczalnych wybranego pola*/
 				this.setState(currentState);
 				chosenCell.potentialValues.delete(chosenValue);
 				if (chosenCell.potentialValues.size > 0) stateStack.push(this.getState());
-			}
-			else if (!this.checkSolution()) {
+			} else if (!this.checkSolution()) {
+				/*jeśli osiągnięty stan może doprowadzić do rozwiązania,
+				ale nie jest rozwiązaniem, na stos dokładany jest obecny stan*/
 				const tmp = this.getState();
 				this.setState(currentState);
 				chosenCell.potentialValues.delete(chosenValue);
@@ -723,15 +722,13 @@ export class KakuroBoard {
 					stateStack.push(this.getState());
 				}
 				stateStack.push(tmp);
-			}
-			else {
+			} else {
+				/*jeśli osiągnięty stan jest rozwiązaniem, funkcja jest przerywana*/
 				return true;
 			}
 
-			console.log(stateStack.length, stateStack)
 			if (refreshFunc) await refreshFunc();
 			if (timeStep) await new Promise((r) => setTimeout(r, timeStep));
-			if (refreshFunc && !timeStep) alert();
 		}
 		return this.checkSolution();
 	}
@@ -740,14 +737,14 @@ export class KakuroBoard {
 		const finalVClues = new Set();
 		const finalHClues = new Set();
 
-		this.forEveryField((cell)=>{
+		this.forEveryField((cell) => {
 			const cx = cell.positionX;
 			const cy = cell.positionY;
 			const hrun = this.getHorizontalRun(cx, cy, true);
 			const vrun = this.getVerticalRun(cx, cy, true);
 			finalHClues.add(hrun.clueCell);
 			finalVClues.add(vrun.clueCell);
-			if (cell.value!==0) return;
+			if (cell.value !== 0) return;
 			const pots = this.board[cy][cx].potentialValues;
 			const val = Array.from(pots)[getRandomInt(0, pots.size - 1)];
 			hrun.containedCells.forEach((c) => c.potentialValues.delete(val));
@@ -767,7 +764,7 @@ export class KakuroBoard {
 
 		if (!this.checkSolution()) return false;
 
-		this.forEveryField((cell)=>{
+		this.forEveryField((cell) => {
 			cell.potentialValues.clear();
 			cell.value = 0;
 		});
@@ -775,7 +772,7 @@ export class KakuroBoard {
 		return true;
 	}
 
-	async generateRandom(w, h, refreshFunc, timeStep) {
+	async generateRandom(w, h) {
 		if (w < 3 || h < 3) return;
 		let connected;
 		const hash = (x, y) => x * Math.max(100, w + 1, h + 1) + y;
@@ -793,7 +790,6 @@ export class KakuroBoard {
 				let row = [];
 				this.board.push(row);
 				for (let j = 0; j < w; j++) {
-					//const tmp = new Cell(!(j && i)?CellType.Clue:CellType.Field, [], true);
 					const tmp = new Cell(CellType.Clue, [], true);
 					tmp.positionX = j;
 					tmp.positionY = i;
@@ -919,67 +915,4 @@ export class KakuroBoard {
 
 		if (!this.randomlyFill()) return true;
 	}
-}
-
-export function boardToXml(obj){
-	let board = [];
-	let row = [];
-	for (let y = 0; y < obj.height; y++) {
-		for (let x = 0; x < obj.width; x++) {
-			if(obj.board[y][x].type === CellType.Clue) {
-				row.push({
-					type: CellType.Clue,
-					horizontalClue: obj.board[y][x].horizontalClue,
-					verticalClue: obj.board[y][x].verticalClue
-				});
-			}else if(obj.board[y][x].type === CellType.Field){
-				row.push({
-					type: CellType.Field,
-				});
-			}
-		}
-		board.push({cell: row});
-		row=[];
-	}
-	const xmlBuilder = new xml2js.Builder();
-
-	return xmlBuilder.buildObject({board: board, width: obj.width, height: obj.height});
-}
-
-
-export function XmlToBoard(xml){
-	const xmlParser = new xml2js.Parser();
-
-	const board = new KakuroBoard();
-
-	xmlParser.parseString(xml, (err, result) => {
-		if (err) {
-			return board;
-		} else {
-			//console.log(result);
-			board.board = [];
-			board.width = result.root.width[0];
-			board.height = result.root.height[0];
-			let row = [];
-			let type;
-			let horizontal;
-			let vertical;
-			for(let i = 0; i < board.height; i++){
-				for(let j = 0; j < board.width; j++) {
-					type = parseInt(result.root.board[i].cell[j].type)
-					if(type === CellType.Clue){
-						vertical = parseInt(result.root.board[i].cell[j].verticalClue);
-						horizontal = parseInt(result.root.board[i].cell[j].horizontalClue);
-						row.push(new Cell(CellType.Clue, [vertical, horizontal], false, [j,i]));
-					}else{
-						let cell = new Cell(CellType.Field, undefined, false, [j, i]);
-						row.push(cell);
-					}
-				}
-				board.board.push(row);
-				row=[];
-			}
-		}
-	});
-	return board;
 }

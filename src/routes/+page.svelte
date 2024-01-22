@@ -1,11 +1,11 @@
 <script>
 	import KakuroBoardView from '$lib/KakuroBoardView.svelte';
-	import {boardToXml, XmlToBoard} from "$lib/KakuroBoard.js";
 
 	let showingHints = true;
 	let pencilMarking = false;
 	let complete = false;
 	let editing = false;
+	let visualization = false;
 
 	let currentBoard;
 
@@ -17,8 +17,12 @@
 	}
 	async function generateNewBoard(e) {
 		e.srcElement.disabled = true;
-		while(await currentBoard.generateRandom(generateWidth, generateHeight, null, null)){};
-		currentBoard.checkSolutionAll()
+		if (visualization) {
+			while (await currentBoard.generateRandom(generateWidth, generateHeight, refreshBoard, 1)) {}
+		} else {
+			while (await currentBoard.generateRandom(generateWidth, generateHeight, null, null)) {}
+		}
+		currentBoard.checkSolutionAll();
 		currentBoard = currentBoard;
 
 		e.srcElement.disabled = false;
@@ -27,15 +31,11 @@
 	async function solveBoard(e) {
 		e.srcElement.disabled = true;
 
-		// currentBoard.clear();
-		// console.time('newMethod');
-		// await currentBoard.solveStackBased(refreshBoard, 1, false);
-		// console.timeEnd('newMethod');
-
-		currentBoard.clear();
-		console.time('basicMethod');
-		await currentBoard.solveStackBased(refreshBoard, 1, true);
-		console.timeEnd('basicMethod');
+		if (visualization) {
+			await currentBoard.solveStackBased(refreshBoard, 1, true);
+		} else {
+			await currentBoard.solveStackBased(null, null, true);
+		}
 
 		complete = currentBoard.checkSolutionAll();
 		currentBoard = currentBoard;
@@ -45,7 +45,11 @@
 
 	async function solveBoardPure(e) {
 		e.srcElement.disabled = true;
-		await currentBoard.solvePure(refreshBoard, 1);
+		if (visualization) {
+			await currentBoard.solvePure(refreshBoard, 1);
+		} else {
+			await currentBoard.solvePure(null, null);
+		}
 		complete = currentBoard.checkSolutionAll();
 		currentBoard = currentBoard;
 
@@ -54,10 +58,14 @@
 	async function refineBoard(e) {
 		e.srcElement.disabled = true;
 
-		await currentBoard.refineGenerated(refreshBoard, 1);
+		if (visualization) {
+			await currentBoard.refineGenerated(refreshBoard, 1);
+		} else {
+			await currentBoard.refineGenerated(null, null);
+		}
 
-		complete=false;
-		currentBoard=currentBoard;
+		complete = false;
+		currentBoard = currentBoard;
 		e.srcElement.disabled = false;
 	}
 </script>
@@ -66,38 +74,44 @@
 	<p>
 		<label>
 			<input type="checkbox" bind:checked={showingHints} />
-			Show hint tooltips
+			Pokazuj dymki ze wskazówkami
 		</label>
 	</p>
 	<p>
 		<label>
 			<input type="checkbox" bind:checked={pencilMarking} />
-			Input pencil marks
+			Wpisuj cyfry pomocnicze
+		</label>
+	</p>
+	<p>
+		<label>
+			<input type="checkbox" bind:checked={visualization} />
+			Wizualizuj procesy
 		</label>
 	</p>
 	<p>
 		<label>
 			<input type="checkbox" bind:checked={editing} />
-			Editing
+			Edytuj planszę
 		</label>
 		{#if editing}
 			<button
-				disabled={currentBoard.height >= 40}
+				disabled={currentBoard.height >= 100}
 				on:click={() => {
 					currentBoard.addRow();
 					currentBoard = currentBoard;
 				}}
 			>
-				Add row
+				Dodaj rząd
 			</button>
 			<button
-				disabled={currentBoard.width >= 40}
+				disabled={currentBoard.width >= 100}
 				on:click={() => {
 					currentBoard.addColumn();
 					currentBoard = currentBoard;
 				}}
 			>
-				Add column
+				Dodaj kolumnę
 			</button>
 			<button
 				disabled={currentBoard.height <= 3}
@@ -106,7 +120,7 @@
 					currentBoard = currentBoard;
 				}}
 			>
-				Remove row
+				Usuń rząd
 			</button>
 			<button
 				disabled={currentBoard.width <= 3}
@@ -115,35 +129,40 @@
 					currentBoard = currentBoard;
 				}}
 			>
-				Remove column
+				Usuń kolumnę
 			</button>
-			Current size: {currentBoard.width}x{currentBoard.height}
+			Obecny rozmiar: {currentBoard.width}x{currentBoard.height}
 		{/if}
 	</p>
 	<div>
 		<label>
-			Width
-			<input bind:value={generateWidth} type="range" min="3" max="40" />
+			Szerokość planszy do wygenerowania
+			<input bind:value={generateWidth} type="range" min="3" max="15" />
 		</label>
 		<label>
-			Height
-			<input bind:value={generateHeight} type="range" min="3" max="40" />
+			Wysokość planszy do wygenerowania
+			<input bind:value={generateHeight} type="range" min="3" max="15" />
 		</label>
 	</div>
-	<button on:click={generateNewBoard}>Generate new {generateWidth} by {generateHeight} board</button>
-	<button on:click={solveBoard}>Try solve</button>
-	<button on:click={solveBoardPure}>Try solve pure</button>
-	<button on:click={()=>{currentBoard.clear();complete=false;currentBoard=currentBoard;}}>Clear board</button>
-	<button on:click={(e)=>{refineBoard(e)}}>Refine</button>
-	<button on:click={()=>{
-		localStorage.setItem("savedBoard", boardToXml(currentBoard))
-	}}>Save board to local storage</button>
-	<button on:click={()=>{
-		const toLoad = localStorage.getItem("savedBoard");
-		if (toLoad) currentBoard = XmlToBoard(toLoad);
-	}}>Load board from local storage</button>
-
-	<span> {@html complete ? 'You did it!' : '<br/>'} </span>
+	<button on:click={generateNewBoard}
+		>Wygeneruj nową planszę o rozmiarze {generateWidth} na {generateHeight}</button
+	>
+	<button on:click={solveBoard}>Rozwiąż planszę{visualization ? ' z wizualizacją' : ''}</button>
+	<button on:click={solveBoardPure}>Rozwiąż metodami logicznymi</button>
+	<button
+		on:click={() => {
+			currentBoard.clear();
+			complete = false;
+			currentBoard = currentBoard;
+		}}>Wyczyść planszę</button
+	>
+	<button
+		on:click={(e) => {
+			refineBoard(e);
+		}}>Ogranicz ilość rozwiązań planszy{visualization ? ' z wizualizacją' : ''}</button
+	>
+	<br />
+	<span style="font-size: 2em"> {@html complete ? 'Rozwiązanie poprawne! Brawo!!' : '<br/>'} </span>
 
 	<div>
 		<KakuroBoardView
@@ -154,9 +173,9 @@
 			{editing}
 		/>
 		{#if editing}
-			c - change field to clue<br />
-			f - change clue to field<br />
-			e - edit target sums in clue<br />
+			c - zmień pole na czarne<br />
+			f - zmień pole na białe<br />
+			e - zmień wartość sumy docelowej<br />
 		{/if}
 	</div>
 </div>
