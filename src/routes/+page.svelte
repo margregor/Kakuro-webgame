@@ -22,8 +22,8 @@
 		} else {
 			while (await currentBoard.generateRandom(generateWidth, generateHeight, null, null)) {}
 		}
-		currentBoard.checkSolutionAll();
-		currentBoard = currentBoard;
+		complete = currentBoard.checkSolutionAll();
+		await refreshBoard();
 
 		e.srcElement.disabled = false;
 	}
@@ -38,7 +38,7 @@
 		}
 
 		complete = currentBoard.checkSolutionAll();
-		currentBoard = currentBoard;
+		await refreshBoard();
 
 		e.srcElement.disabled = false;
 	}
@@ -51,7 +51,7 @@
 			await currentBoard.solvePure(null, null);
 		}
 		complete = currentBoard.checkSolutionAll();
-		currentBoard = currentBoard;
+		await refreshBoard();
 
 		e.srcElement.disabled = false;
 	}
@@ -65,7 +65,7 @@
 		}
 
 		complete = false;
-		currentBoard = currentBoard;
+		await refreshBoard();
 		e.srcElement.disabled = false;
 	}
 </script>
