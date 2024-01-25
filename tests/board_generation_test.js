@@ -29,11 +29,43 @@ test('verify generated board size', async ({ page }) => {
     }
 });
 
-test('verify generated board refinement', async ({ page }) => {
+test('verify generated board refinement (small)', async ({ page }) => {
     await page.goto('/');
 
     for (let i = 0; i < 10; i++) {
         await page.getByText('Wygeneruj nową planszę o rozmiarze 3 na 3').click();
+        await page.getByText('Ogranicz ilość rozwiązań planszy').click();
+        await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).not.toBeAttached();
+        //plansza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
+        await page.getByText('Rozwiąż metodami logicznymi').click();
+        await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).toBeAttached();
+    }
+});
+
+test('verify generated board refinement (medium)', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByLabel('Szerokość planszy do wygenerowania').fill(String(8));
+    await page.getByLabel('Wysokość planszy do wygenerowania').fill(String(8));
+
+    for (let i = 0; i < 10; i++) {
+        await page.getByText('Wygeneruj nową planszę o rozmiarze 8 na 8').click();
+        await page.getByText('Ogranicz ilość rozwiązań planszy').click();
+        await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).not.toBeAttached();
+        //plasza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
+        await page.getByText('Rozwiąż metodami logicznymi').click();
+        await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).toBeAttached();
+    }
+});
+
+test('verify generated board refinement (big)', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByLabel('Szerokość planszy do wygenerowania').fill(String(15));
+    await page.getByLabel('Wysokość planszy do wygenerowania').fill(String(15));
+
+    for (let i = 0; i < 10; i++) {
+        await page.getByText('Wygeneruj nową planszę o rozmiarze 15 na 15').click();
         await page.getByText('Ogranicz ilość rozwiązań planszy').click();
         await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).not.toBeAttached();
         //plasza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
