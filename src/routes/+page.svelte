@@ -164,7 +164,7 @@
 	<br />
 	<span style="font-size: 2em"> {@html complete ? 'Rozwiązanie poprawne! Brawo!!' : '<br/>'} </span>
 
-	<div>
+	<div style="display: flex; justify-content: center;">
 		<KakuroBoardView
 			bind:board={currentBoard}
 			showTooltipHints={showingHints}

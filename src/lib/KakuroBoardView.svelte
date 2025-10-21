@@ -258,12 +258,7 @@
 				<div class="cell" id="cell{columnIndex}x{rowIndex}">
 					<label style="margin-top: -18px;">
 						{#if cell.value === 0}
-							<svg
-								class="icon"
-								width="40px"
-								height="40px"
-								viewBox="0 -25 100 100"
-							>
+							<svg class="icon" width="40px" height="40px" viewBox="0 -25 100 100">
 								{#each cell.potentialValues as val}
 									<text
 										x={5 + 33 * ((val - 1) % 3)}
@@ -302,16 +297,10 @@
 							stroke-linecap="square"
 						/>
 						{#if cell.horizontalFulfilled}
-							<polygon
-								points="0,0 100,0 100,100"
-								fill="green"
-							/>
+							<polygon points="0,0 100,0 100,100" fill="green" />
 						{/if}
 						{#if cell.verticalFulfilled}
-							<polygon
-								points="0,0 0,100 100,100"
-								fill="green"
-							/>
+							<polygon points="0,0 0,100 100,100" fill="green" />
 						{/if}
 						{#key showTooltipHints}
 							{#if cell.verticalClue > 0 || editing}
@@ -377,7 +366,6 @@
 		display: grid;
 		grid-template-columns: repeat(var(--board-width), 1fr);
 		grid-gap: 0;
-		max-width: 40px;
 	}
 
 	.cell {
