@@ -52,7 +52,7 @@ test('verify generated board refinement (medium)', async ({ page }) => {
         await page.getByText('Wygeneruj nową planszę o rozmiarze 8 na 8').click();
         await page.getByText('Ogranicz ilość rozwiązań planszy').click();
         await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).not.toBeAttached();
-        //plasza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
+        //plansza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
         await page.getByText('Rozwiąż metodami logicznymi').click();
         await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).toBeAttached();
     }
@@ -68,7 +68,7 @@ test('verify generated board refinement (big)', async ({ page }) => {
         await page.getByText('Wygeneruj nową planszę o rozmiarze 15 na 15').click();
         await page.getByText('Ogranicz ilość rozwiązań planszy').click();
         await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).not.toBeAttached();
-        //plasza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
+        //plansza z ograniczoną ilością rozwiązań powinna być rozwiązywalna metodami logicznymi
         await page.getByText('Rozwiąż metodami logicznymi').click();
         await expect(page.getByText('Rozwiązanie poprawne! Brawo!!')).toBeAttached();
     }
