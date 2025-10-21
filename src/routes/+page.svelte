@@ -172,6 +172,8 @@
 			bind:complete
 			{editing}
 		/>
+	</div>
+	<div style="display: flex; justify-content: center;">
 		{#if editing}
 			c - zmień pole na czarne<br />
 			f - zmień pole na białe<br />
