@@ -307,7 +307,10 @@
 								<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 								<text
 									on:keydown={(e) => handleClueKeydown(e, rowIndex, columnIndex, true)}
+									on:focus={() => navigator.virtualKeyboard.show()}
 									inputmode="decimal"
+									virtualKeyboardPolicy="manual"
+									contenteditable="true"
 									role="textbox"
 									id="vclue{columnIndex}x{rowIndex}"
 									x="5"
@@ -334,6 +337,10 @@
 									on:keydown={(e) => handleClueKeydown(e, rowIndex, columnIndex, false)}
 									role="textbox"
 									id="hclue{columnIndex}x{rowIndex}"
+									on:focus={() => navigator.virtualKeyboard.show()}
+									inputmode="decimal"
+									virtualKeyboardPolicy="manual"
+									contenteditable="true"
 									x="95"
 									y="40"
 									stroke="white"
