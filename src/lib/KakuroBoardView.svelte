@@ -307,6 +307,7 @@
 								<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 								<text
 									on:keydown={(e) => handleClueKeydown(e, rowIndex, columnIndex, true)}
+									inputmode="decimal"
 									role="textbox"
 									id="vclue{columnIndex}x{rowIndex}"
 									x="5"
